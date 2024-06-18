@@ -1,0 +1,166 @@
+const Web3 = require('web3');
+const web3 = new Web3('https://data-seed-prebsc-1-s1.binance.org:8545/');
+// const web3 = new Web3('https://open-platform.nodereal.io/05d5da11488b42aa8c80908a7fb5fde7/arbitrum-nitro/');
+const ether  = new Web3('https://mainnet.infura.io/v3/1bfb34d605634d759b708a10fd1eb697');
+
+const privateKey = 'a5ceb4f9c2aca38c0849389febe897bf48ede3c5ef6562912d0425607e3dfd26';
+const account = web3.eth.accounts.privateKeyToAccount(privateKey);
+const address = account.address;
+// vi nhan token.
+const recipient = '0xE37135c08478375C38a7b83D9618957F28cB0d84';
+const amount = web3.utils.toWei('100', 'ether');
+
+//contract weth token
+// const weth_abi = require('./abi/weth.json');
+// const weth_address = "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1";
+// const wethContract = new web3.eth.Contract(weth_abi, weth_address, {from: address});
+//contract weth token
+
+//contract test token
+const arb_token_abi = require('./abi/arbtoken.json');
+const arb_token_address = "0xB18B4e088F8142AAC659E369364A5dEb4f0ED258";
+const arbTokenContract = new web3.eth.Contract(arb_token_abi, arb_token_address, {from: address});
+//contract test token
+
+// contract addr pool claim token test  
+const claim_abi = require('./abi/claimair.json');
+const claim_address = "0x0e20584A5993805cA96DDf6b8b7D6d7A8D03F8e9";
+const claimContract = new web3.eth.Contract(claim_abi, claim_address, {from: address});
+// contract addr pool claim token test 
+
+
+
+async function jobs(){
+    let index = 0;
+    while (true) {
+        await claimAndSend();
+        index++;
+        console.log("=======index=======: ", index)
+    }
+}
+
+async function claimAndSend(){
+    const blockNumber = await ether.eth.getBlockNumber();
+    console.log("blockNumber", blockNumber);
+    if (true){
+        console.log("=======haha=========");
+        await claim();
+        await send();
+        // await depositEth();
+        // await sendWeth();
+    }
+}
+
+// console.log('claim contract: ', claimContract)
+
+// console.log('adress: ', address)
+
+async function claim(){
+    try{
+        var dataClaim = claimContract.methods.claim();
+        var count = await web3.eth.getTransactionCount(address);
+        var tx = {
+            from:address,
+            //gasPrice:web3.utils.toHex(5000000000),
+            // gasLimit:web3.utils.toHex(750000),
+            gas: 500000,
+            to:claim_address,
+            data:dataClaim.encodeABI(),
+            nonce:web3.utils.toHex(count)
+        };
+        const signedTx = await web3.eth.accounts.signTransaction(tx, privateKey);
+        const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+        //console.log('receipt:', receipt)
+    }
+    catch(err){
+        console.log("err", err);
+        return
+    }
+    
+}
+
+
+async function send(){
+    try {
+        var dataTransfer = arbTokenContract.methods.transfer(
+        recipient,
+        amount
+        );
+
+        console.log(arbTokenContract);
+        //console.log(typeof('kieu du lieu arbTokenContract: ', arbTokenContract));
+    
+        var count = await web3.eth.getTransactionCount(address);
+        //console.log('address: ', address);
+        //console.log(typeof('kieu du lieu address: ', address));
+        var tx = {
+            from:address,
+            gas: 501064,
+            //gasPrice:web3.utils.toHex(5000000000),
+            to:arb_token_address,
+            data:dataTransfer.encodeABI(),
+            nonce:web3.utils.toHex(count)
+        };
+        const signedTx = await web3.eth.accounts.signTransaction(tx, privateKey);
+        //console.log('privateKey: ', privateKey);
+        //console.log(typeof('kieu du lieu privateKey: ', privateKey));
+        const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+        //console.log('receipt:', receipt)
+    }
+    catch(err){
+        console.log("err",err);
+        return
+    }
+}
+
+
+
+// async function checkBalance(){
+//     const blockNumber = await web3.eth.getBlockNumber();
+//     console.log("blockNumber", blockNumber);
+//     await arbTokenContract.methods.balanceOf("0x67a24CE4321aB3aF51c2D0a4801c3E111D88C9d9").call(function (err, res) {
+//         if (err) {
+//           console.log("An error occurred", err)
+//           return
+//         }
+//         console.log("The balance is: ", res)
+//       })
+//   }
+
+// async function check(){
+//     await claimContract.methods.claimableTokens("0x13CAF6692B5F54B14C6a5D1Fb1D3861e8C0cf8A5").call(function (err, res) {
+//         if (err) {
+//             console.log("An error occurred", err)
+//             return
+//         }
+//         console.log("The balance is: ", res)
+//         })
+// }
+
+// async function sendWeth(){
+//     try{
+//         var dataTransfer = wethContract.methods.transfer(
+//             "0x073b235C4c61c35E5D38F48de8AEC7aF30e12621",
+//             web3.utils.toWei('0.000002', 'ether'),
+//         );
+//         var count = await web3.eth.getTransactionCount(address);
+//         var tx = {
+//             from:address,
+//             gas: 901064,
+//             to:weth_address,
+//             data:dataTransfer.encodeABI(),
+//             nonce:web3.utils.toHex(count)
+//         };
+//         const signedTx = await web3.eth.accounts.signTransaction(tx, privateKey);
+//         const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+//         console.log('receipt:', receipt)
+//     }
+//     catch(err){
+//         console.log("err");
+//         return
+//     }
+// }
+claimAndSend()
+// check()
+//jobs()
+// sendWeth();
